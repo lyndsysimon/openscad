@@ -1,17 +1,30 @@
 $fa = 1;
 $fs = 0.4;
 
-module spitzer_bullet(d=10, ogive_radius=6) {
-  cylinder_h = 20;
-  frustum_h = 4;
-  frustum_d = 8;
+module spitzer_bullet(
+  d=10,
+  l=undef, // overall length
+  ogive_radii=6, // radii of ogive
+  cylinder_l=undef, // length of straight portion
+  frustum_l=undef,  // length of frustum ("boattail")
+  frustum_d=undef, // small diameter of frustum ("boattail")
+) {
+  o_l = ogive_length(d, ogive_radii);
+  f_d = frustum_d == undef ? d - d/5 : frustum_d;
+  f_l = frustum_l == undef ? 4 : frustum_l;
+  c_l =
+    cylinder_l == undef ?
+      l == undef ? 10 : l - o_l - f_l
+      : cylinder_l;
 
-  cylinder(d1=frustum_d, d2=d, h=frustum_h);
-  translate([0,0,frustum_h]) {
-    cylinder(d=d, h=cylinder_h);
-  }
-  translate([0,0,frustum_h + cylinder_h]) {
-    tangent_ogive(d, R=ogive_radius);
+  union() {
+    cylinder(d1=f_d, d2=d, h=f_l);
+    translate([0,0,f_l]) {
+      cylinder(d=d, h=c_l);
+    }
+    translate([0,0,f_l + c_l]) {
+      tangent_ogive(d, R=ogive_radii);
+    }
   }
 }
 
@@ -41,3 +54,7 @@ module tangent_ogive(d, R=6) {
     }
   }
 }
+
+function ogive_length(d, R) =
+  // equivalent to finding the positive y-intercept for either circle
+  sqrt(pow(R*d, 2) - pow(R*d - d/2, 2));
